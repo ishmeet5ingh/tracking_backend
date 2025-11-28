@@ -32,7 +32,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: dp3635/tracking_backend:latest
+          tags: ishmeet2001/tracking_backend:latest
           platforms: linux/amd64
 
       - name: Install Docker on EC2 instance
@@ -62,10 +62,10 @@ jobs:
             docker rm -f $(docker ps -aq) || true
             docker rmi -f $(docker images -aq) || true
             docker system prune -af || true
-            docker pull dp3635/tracking_backend:latest
+            docker pull ishmeet2001/tracking_backend:latest
             docker run -d -p 5000:5000 --name tracking_backend \
               -v /home/ec2-user/uploads:/app/public/uploads \
               -e DB_URL="${{ env.DB_URL }}" \
               -e SECRET_KEY="${{ env.SECRET_KEY }}" \
               -e PORT="${{ env.PORT }}" \
-              dp3635/tracking_backend:latest
+              ishmeet2001/tracking_backend:latest
