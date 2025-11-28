@@ -65,7 +65,7 @@ jobs:
             docker pull ishmeet2001/tracking_backend:latest
             docker run -d -p 5000:5000 --name tracking_backend \
               -v /home/ec2-user/uploads:/app/public/uploads \
-              -e DB_URL="${{ env.DB_URL }}" \
+              -e MAIN_DB_URL="$MAIN_DB_URL" \
               -e SECRET_KEY="${{ env.SECRET_KEY }}" \
               -e PORT="${{ env.PORT }}" \
               ishmeet2001/tracking_backend:latest
