@@ -4,9 +4,7 @@ import jwt from 'jsonwebtoken';
 
 // Generate JWT token
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN
-  });
+  return jwt.sign({ userId }, process.env.JWT_SECRET);
 };
 
 // Register new user (REST API)
@@ -125,7 +123,6 @@ export const stopTracking = async (req, res) => {
   }
 };
 
-// --- Socket.IO handler function to update location in DB and broadcast ---
 
 // --- Socket.IO handler function to update location in DB and broadcast ---
 

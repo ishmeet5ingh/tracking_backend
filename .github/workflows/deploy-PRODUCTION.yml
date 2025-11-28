@@ -1,0 +1,71 @@
+name: Deploy PRODUCTION tracking_backend
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DB_URL: ${{ secrets.MAIN_DB_URL }}
+  SECRET_KEY: ${{ secrets.SECRET_KEY }}
+  PORT: 5000
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: dp3635/tracking_backend:latest
+          platforms: linux/amd64
+
+      - name: Install Docker on EC2 instance
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.MAIN_AWS_BACKEND_IP }}
+          username: ec2-user
+          key: ${{ secrets.MAIN_AWS_SSH_KEY }}
+          script: |
+            sudo yum update -y
+            sudo yum install docker -y
+            sudo service docker start
+            sudo usermod -aG docker ec2-user
+
+      - name: Deploy to AWS EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.MAIN_AWS_BACKEND_IP }}
+          username: ec2-user
+          key: ${{ secrets.MAIN_AWS_SSH_KEY }}
+          request_pty: false
+          script: |
+            mkdir -p /home/ec2-user/uploads
+            echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+            docker stop tracking_backend || true
+            docker rm tracking_backend || true
+            docker rm -f $(docker ps -aq) || true
+            docker rmi -f $(docker images -aq) || true
+            docker system prune -af || true
+            docker pull dp3635/tracking_backend:latest
+            docker run -d -p 5000:5000 --name tracking_backend \
+              -v /home/ec2-user/uploads:/app/public/uploads \
+              -e DB_URL="${{ env.DB_URL }}" \
+              -e SECRET_KEY="${{ env.SECRET_KEY }}" \
+              -e PORT="${{ env.PORT }}" \
+              dp3635/tracking_backend:latest
