@@ -19,10 +19,31 @@ const io = new Server(server, {
   }
 });
 
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Health check endpoints (before routes)
+app.get('/health', async (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    mongodb: dbStatus,
+    socketClients: io.engine.clientsCount,
+    uptime: process.uptime()
+  });
+});
+
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'JWT Authentication and Real-Time Location Tracking API is running',
+    health: '/health',
+    docs: '/api/docs' 
+  });
+});
 
 // MongoDB connection
 mongoose.connect(process.env.MAIN_DB_URL)
