@@ -7,6 +7,7 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET);
 };
 
+
 // Register new user (REST API)
 export const register = async (req, res) => {
   try {
