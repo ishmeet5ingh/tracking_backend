@@ -37,6 +37,7 @@ app.get('/health', async (req, res) => {
   });
 });
 
+
 app.get('/', (req, res) => {
   res.json({ 
     message: 'JWT Authentication and Real-Time Location Tracking API is running',
