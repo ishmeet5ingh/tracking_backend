@@ -71,6 +71,25 @@ export const login = async (req, res) => {
   }
 };
 
+export const logout = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (user) {
+      user.isBeingTracked = false;
+      // Optional: reset location if you want
+      // user.lastKnownLocation = { type: 'Point', coordinates: [0, 0] };
+      await user.save();
+
+      // Optionally notify other clients via socket if you have io instance available
+      // io.emit('userStoppedTracking', { userId: user._id, username: user.username });
+    }
+
+    res.json({ message: 'Logout successful and tracking stopped' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error during logout', error: error.message });
+  }
+};
+
 // Get user profile (protected route, REST API)
 export const getProfile = async (req, res) => {
   try {

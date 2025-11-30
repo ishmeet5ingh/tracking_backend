@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, getProfile, updateLocation, stopTracking, getTrackedUsers } from '../controllers/userController.js';
+import { register, login, getProfile, updateLocation, stopTracking, getTrackedUsers, logout } from '../controllers/userController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -15,6 +15,6 @@ router.get('/profile', authMiddleware, getProfile);
 router.post('/location', authMiddleware, updateLocation);
 router.post('/stop-tracking', authMiddleware, stopTracking);
 router.get('/tracked-users', getTrackedUsers);
-
+router.post('/logout', authMiddleware, logout)
 
 export default router;

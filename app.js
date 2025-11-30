@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes.js';
 import { updateUserLocationViaSocket } from './controllers/userController.js';
+import User from './models/userModel.js'; // Import User model
 
 dotenv.config();
 
@@ -18,7 +19,6 @@ const io = new Server(server, {
     methods: ['GET', 'POST']
   }
 });
-
 
 // Middleware
 app.use(cors());
@@ -37,7 +37,6 @@ app.get('/health', async (req, res) => {
   });
 });
 
-
 app.get('/', (req, res) => {
   res.json({ 
     message: 'JWT Authentication and Real-Time Location Tracking API is running',
@@ -55,12 +54,32 @@ mongoose.connect(process.env.MAIN_DB_URL)
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
+  // Handle incoming location update
   socket.on('locationUpdate', async (data) => {
     const { userId, coords } = data; // Client must send userId + coords { latitude, longitude }
     if (userId && coords?.latitude != null && coords?.longitude != null) {
       await updateUserLocationViaSocket(userId, coords, io, socket);
     } else {
       console.warn('Invalid locationUpdate payload:', data);
+    }
+  });
+
+  // Handle user stopped tracking event (e.g., on logout)
+  socket.on('userStoppedTracking', async (data) => {
+    const { userId } = data;
+    if (!userId) return;
+
+    try {
+      const user = await User.findById(userId);
+      if (user) {
+        user.isBeingTracked = false;
+        await user.save();
+
+        // Broadcast to other clients that user stopped tracking
+        socket.broadcast.emit('userStoppedTracking', { userId, username: user.username });
+      }
+    } catch (err) {
+      console.error('Error handling userStoppedTracking event:', err);
     }
   });
 
@@ -72,7 +91,7 @@ io.on('connection', (socket) => {
 // Express routes
 app.use('/api/users', userRoutes);
 
-// Health check endpoint
+// Health check endpoint (duplicate - can be removed if desired)
 app.get('/', (req, res) => {
   res.json({ message: 'JWT Authentication and Real-Time Location Tracking API is running' });
 });
